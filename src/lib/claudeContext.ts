@@ -165,7 +165,7 @@ export function buildSingleProjectContext(project: Project, allProjects: Project
   }
 
   lines.push("---");
-  lines.push("_Help me work on this project. Read the repo to understand the current codebase, then tackle the next action. Flag any overlap or reuse opportunities with the related projects listed above._");
+  lines.push("_Help me work on this project. Read the repo to understand the current codebase, then tackle the next action. Flag any overlap or reuse opportunities with the related projects listed above. After completing each meaningful change, commit and push to the remote with a clear commit message._");
   lines.push("");
   return lines.join("\n");
 }
