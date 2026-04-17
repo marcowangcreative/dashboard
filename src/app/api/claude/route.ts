@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { exec } from "child_process";
+import { writeFileSync, mkdirSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 export async function POST(req: Request) {
   // Only allow in development — never spawn local processes from production
@@ -16,36 +19,44 @@ export async function POST(req: Request) {
   // Sanitize: only allow paths that start with ~ or / and contain no shell metacharacters
   const pathPattern = /^[~\/][\w\/.\-_ ]+$/;
 
-  let shellScript: string;
+  // Write prompt to a temp file to avoid shell escaping issues
+  const promptDir = join(tmpdir(), "wang-work-brain");
+  mkdirSync(promptDir, { recursive: true });
+  const promptFile = join(promptDir, `prompt-${Date.now()}.md`);
+  writeFileSync(promptFile, prompt, "utf-8");
+
+  let cdCommand: string;
 
   if (localPath && typeof localPath === "string") {
     if (!pathPattern.test(localPath)) {
       return NextResponse.json({ error: "Invalid local path" }, { status: 400 });
     }
-    // Expand ~ to $HOME in the shell
     const expandedPath = localPath.startsWith("~")
       ? `$HOME${localPath.slice(1)}`
       : localPath;
-    shellScript = `cd "${expandedPath}" && claude --prompt ${JSON.stringify(prompt)}`;
+    cdCommand = `cd "${expandedPath}"`;
   } else if (repoUrl && typeof repoUrl === "string") {
-    // Validate repo URL is a GitHub URL
     if (!/^https:\/\/github\.com\/[\w.\-]+\/[\w.\-]+\/?$/.test(repoUrl)) {
       return NextResponse.json({ error: "Invalid repo URL" }, { status: 400 });
     }
     const repoName = repoUrl.replace(/\/$/, "").split("/").pop()!;
-    shellScript = `cd ~/Projects && git clone "${repoUrl}" 2>/dev/null; cd "${repoName}" && claude --prompt ${JSON.stringify(prompt)}`;
+    cdCommand = `cd "$HOME/Projects" && git clone "${repoUrl}" 2>/dev/null; cd "${repoName}"`;
   } else {
     return NextResponse.json({ error: "Need localPath or repoUrl" }, { status: 400 });
   }
 
+  // Launch interactive claude session with the prompt file contents as initial message
+  // Use: cat promptfile | claude  (pipes prompt as first message into interactive mode)
+  const shellScript = `${cdCommand} && cat "${promptFile}" | /opt/homebrew/bin/claude`;
+
   // Use osascript to open a new Terminal.app window
   const osa = `tell application "Terminal"
   activate
-  do script ${JSON.stringify(shellScript)}
+  do script "${shellScript.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"
 end tell`;
 
   return new Promise<NextResponse>((resolve) => {
-    exec(`osascript -e ${JSON.stringify(osa)}`, (err) => {
+    exec(`osascript -e '${osa.replace(/'/g, "'\\''")}'`, (err) => {
       if (err) {
         resolve(NextResponse.json({ error: "Failed to launch terminal", detail: err.message }, { status: 500 }));
       } else {
