@@ -49,7 +49,7 @@ export async function deleteProject(id: string): Promise<void> {
 export async function syncRelationships(
   thisId: string,
   related: string[]
-): Promise<void> {
+): Promise<Project[]> {
   const all = await fetchProjects();
   const others = all.filter(p => p.id !== thisId);
   const updates = others
@@ -66,7 +66,7 @@ export async function syncRelationships(
     })
     .filter(Boolean) as Project[];
 
-  if (updates.length === 0) return;
+  if (updates.length === 0) return [];
   const { error } = await serverClient()
     .from("projects")
     .upsert(updates, { onConflict: "id" });
@@ -75,4 +75,5 @@ export async function syncRelationships(
     throw new Error(error.message);
   }
   revalidatePath("/");
+  return updates;
 }

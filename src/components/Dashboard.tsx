@@ -52,13 +52,14 @@ export default function Dashboard({ initialProjects }: { initialProjects: Projec
   async function handleSave(p: Project) {
     startTransition(async () => {
       await upsertProject({ ...p, id: p.id });
-      await syncRelationships(p.id, p.related);
+      const updatedPeers = await syncRelationships(p.id, p.related);
+      const peerById = new Map(updatedPeers.map(o => [o.id, o]));
       setProjects(prev => {
         const exists = prev.some(x => x.id === p.id);
-        const updated = exists
+        const base = exists
           ? prev.map(x => x.id === p.id ? p : x)
           : [p, ...prev];
-        return updated;
+        return base.map(x => peerById.get(x.id) ?? x);
       });
       setIsOpen(false);
     });
