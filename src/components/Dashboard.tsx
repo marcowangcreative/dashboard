@@ -236,6 +236,7 @@ function ProjectCard({
   onDelete: () => void;
 }) {
   const [launchLabel, setLaunchLabel] = useState<string | null>(null);
+  const [promptText, setPromptText] = useState("");
   const idx = String(index).padStart(2, "0");
   const catClass = `card-${p.category}`;
   const statusBorder =
@@ -285,13 +286,22 @@ function ProjectCard({
 
       <LinkPills links={p.links} />
 
-      <div className="mt-auto pt-3 border-t border-dashed border-paper-edge flex justify-between items-center gap-2.5">
-        <span className="font-mono text-[10px] text-ink-faint tracking-[0.06em]">Updated {timeAgo(p.updated_at)}</span>
-        <div className="flex gap-0.5">
-          <LaunchBtn project={p} allProjects={allProjects} launchLabel={launchLabel} setLaunchLabel={setLaunchLabel} />
-          <IconBtn onClick={onEdit}>Edit</IconBtn>
-          <IconBtn onClick={onCycle} title="Cycle status">↻</IconBtn>
-          <IconBtn onClick={onDelete} danger>Del</IconBtn>
+      <div className="mt-auto pt-3 border-t border-dashed border-paper-edge flex flex-col gap-2">
+        <PromptBar
+          project={p}
+          allProjects={allProjects}
+          promptText={promptText}
+          setPromptText={setPromptText}
+          launchLabel={launchLabel}
+          setLaunchLabel={setLaunchLabel}
+        />
+        <div className="flex justify-between items-center gap-2.5">
+          <span className="font-mono text-[10px] text-ink-faint tracking-[0.06em]">Updated {timeAgo(p.updated_at)}</span>
+          <div className="flex gap-0.5">
+            <IconBtn onClick={onEdit}>Edit</IconBtn>
+            <IconBtn onClick={onCycle} title="Cycle status">↻</IconBtn>
+            <IconBtn onClick={onDelete} danger>Del</IconBtn>
+          </div>
         </div>
       </div>
     </article>
@@ -310,21 +320,31 @@ function IconBtn({ onClick, children, danger, title }: { onClick: () => void; ch
   );
 }
 
-function LaunchBtn({
-  project, allProjects, launchLabel, setLaunchLabel,
+function PromptBar({
+  project, allProjects, promptText, setPromptText, launchLabel, setLaunchLabel,
 }: {
   project: Project;
   allProjects: Project[];
+  promptText: string;
+  setPromptText: (s: string) => void;
   launchLabel: string | null;
   setLaunchLabel: (l: string | null) => void;
 }) {
-  const prompt = buildSingleProjectContext(project, allProjects);
   const hasLocal = !!project.local_path;
   const repoUrl = splitUrls(project.links?.repo)?.[0];
   const canLaunch = hasLocal || !!repoUrl;
   const isDev = typeof window !== "undefined" && window.location.hostname === "localhost";
 
-  async function handleClick() {
+  function buildPrompt() {
+    const context = buildSingleProjectContext(project, allProjects);
+    if (promptText.trim()) {
+      return context + `\n## Your instruction\n\n${promptText.trim()}\n`;
+    }
+    return context;
+  }
+
+  async function handleLaunch() {
+    const fullPrompt = buildPrompt();
     if (isDev && canLaunch) {
       setLaunchLabel("Launching…");
       try {
@@ -332,13 +352,14 @@ function LaunchBtn({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            prompt,
+            prompt: fullPrompt,
             localPath: project.local_path || undefined,
             repoUrl: !project.local_path ? repoUrl : undefined,
           }),
         });
         if (res.ok) {
           setLaunchLabel("✓ Launched");
+          setPromptText("");
         } else {
           const data = await res.json();
           setLaunchLabel(data.error || "Error");
@@ -348,10 +369,10 @@ function LaunchBtn({
       }
       setTimeout(() => setLaunchLabel(null), 2000);
     } else {
-      // Fallback: copy prompt to clipboard
       try {
-        await navigator.clipboard.writeText(prompt);
+        await navigator.clipboard.writeText(fullPrompt);
         setLaunchLabel("✓ Copied");
+        setPromptText("");
       } catch {
         setLaunchLabel("Error");
       }
@@ -359,19 +380,37 @@ function LaunchBtn({
     }
   }
 
-  const label = launchLabel || (isDev && canLaunch ? "▶ Claude" : "⎋ Copy");
-  const title = isDev && canLaunch
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleLaunch();
+    }
+  }
+
+  const btnLabel = launchLabel || (isDev && canLaunch ? "▶" : "⎋");
+  const btnTitle = isDev && canLaunch
     ? `Launch Claude Code in ${project.local_path || "cloned repo"}`
     : "Copy project context to clipboard";
 
   return (
-    <button
-      onClick={handleClick}
-      title={title}
-      className="px-2 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] rounded-sm transition-all text-ink-faint hover:bg-paper hover:text-accent"
-    >
-      {label}
-    </button>
+    <div className="flex gap-1.5 items-end">
+      <textarea
+        value={promptText}
+        onChange={e => setPromptText(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="What should Claude work on?"
+        rows={1}
+        className="flex-1 font-sans text-[12.5px] leading-snug px-2.5 py-2 bg-paper-deep border border-paper-edge rounded-sm resize-none focus:outline-none focus:border-accent focus:bg-[#fff8ea] placeholder:text-ink-faint/50 min-h-[34px] max-h-[80px]"
+        style={{ fieldSizing: "content" } as React.CSSProperties}
+      />
+      <button
+        onClick={handleLaunch}
+        title={btnTitle}
+        className="shrink-0 h-[34px] w-[34px] flex items-center justify-center font-mono text-[13px] rounded-sm transition-all bg-ink text-paper hover:bg-accent border border-ink hover:border-accent"
+      >
+        {btnLabel}
+      </button>
+    </div>
   );
 }
 
