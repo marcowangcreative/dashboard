@@ -9,6 +9,7 @@ import { splitUrls, deriveLinkLabel, timeAgo, linkifyNotes } from "@/lib/utils";
 import { upsertProject, deleteProject, syncRelationships } from "@/lib/actions";
 import ProjectModal from "./ProjectModal";
 import GraphView from "./GraphView";
+import ContextBar from "./ContextBar";
 
 type View = "cards" | "graph";
 type StatusFilter = "all" | Status;
@@ -164,6 +165,9 @@ export default function Dashboard({ initialProjects }: { initialProjects: Projec
           onDelete={editing ? () => handleDelete(editing.id) : undefined}
         />
       )}
+
+      {/* Claude context export */}
+      <ContextBar projects={projects} />
     </>
   );
 }
