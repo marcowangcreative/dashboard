@@ -1,0 +1,153 @@
+-- Seed data — ported 1:1 from the prototype HTML dashboard.
+-- Run this once after schema.sql. Safe to re-run (upserts on id).
+
+insert into public.projects (id, title, tagline, category, status, stack, links, related, next_action, notes, sort_order) values
+
+('seed/travel',
+ 'Travel Planning Tool',
+ 'Trip + shoot-day planner for destination weddings',
+ 'photo', 'building',
+ array['Vercel'],
+ jsonb_build_object('repo','https://github.com/marcowangcreative/travel','host','https://vercel.com/mwp-projects'),
+ array['seed/wedding-itin'],
+ 'Lock the scope: client-facing, or personal tool only?',
+ 'Decide: standalone, or feeds into the wedding itinerary maker? Hosted under MWP Projects on Vercel.',
+ 1),
+
+('seed/photobox',
+ 'Photobox Gallery Creator',
+ 'Client-facing photo delivery with favorites & downloads',
+ 'photo', 'building',
+ array['Supabase','Vercel'],
+ jsonb_build_object(
+   'live','https://box.marcowang.com/',
+   'repo','https://github.com/marcowangcreative/photobox',
+   'admin','https://qlzyanmfhtjkiwunpwwa.supabase.co',
+   'host','https://vercel.com/mwp-projects'),
+ array['seed/mwp-site'],
+ 'Test one real gallery end-to-end: upload, client link, download.',
+ 'Needs: watermarking, password protection, download controls, favorites.',
+ 2),
+
+('seed/mwp-site',
+ 'Marco Wang Photography: Website Redesign',
+ 'Full portfolio refresh with booking flow',
+ 'photo', 'idea',
+ array['Vercel'],
+ jsonb_build_object('repo','https://github.com/marcowangcreative/marcowangphotography','host','https://vercel.com/mwp-projects'),
+ array['seed/photobox'],
+ 'Pick 3 reference sites you love. Style direction first, code second.',
+ 'Think about: bookings, about page, local SEO for wedding traffic.',
+ 3),
+
+('seed/wedding-itin',
+ 'Wedding Shoot Itinerary Maker',
+ 'Auto-generates timelines for wedding day photography',
+ 'weddings', 'idea',
+ array[]::text[],
+ '{}'::jsonb,
+ array['seed/travel','seed/flowed','seed/wedding-portal'],
+ 'Sketch the couple-facing output. PDF? Shared web page? Both?',
+ 'Inputs: ceremony time, locations, family shot list, golden hour. Feeds into the Wedding Team Portal.',
+ 4),
+
+('seed/wedding-portal',
+ 'Wedding Team Portal',
+ 'Shared workspace where photo + hair teams coordinate a wedding',
+ 'weddings', 'idea',
+ array[]::text[],
+ '{}'::jsonb,
+ array['seed/wedding-itin','seed/flowed','seed/photobox','seed/travel','seed/floweready'],
+ 'Decide the thesis: software product for other wedding vendors, or the operating layer for a joint Jordan + Marco wedding brand?',
+ 'Strategic flagship. The hinge between MWP (Marco, photo) and Flowe Collective (Jordan, hair). Jordan + Marco often shoot the same weddings; this portal is their shared surface.
+
+Probable surfaces: couple-facing dashboard, vendor-facing task board, shared timeline, day-of comms, gallery delivery handoff to Photobox.
+
+Benchmark: https://lovelykindbeauty.com/ (Houston/Austin + destinations). Premium wedding hair+makeup service. Featured Vogue, Martha Stewart, The Knot. 3-step funnel: inquire, consultation, booking link. Key insight: Lovelykind is a SERVICE brand with no software layer. Where we can differentiate: (1) photo + hair combined under one brand, (2) real software tooling (Flowed, Itinerary, Photobox), (3) vendor coordination is a product feature, not a spreadsheet.',
+ 5),
+
+('seed/flowed',
+ 'Flowed: Hair & Makeup Scheduler',
+ 'Backward-plans getting-ready from ceremony time',
+ 'weddings', 'building',
+ array['Supabase'],
+ jsonb_build_object(
+   'repo','https://github.com/flowecollective/flowed',
+   'admin','https://supabase.com/dashboard/project/azddbdhnriqagvoyooqs'),
+ array['seed/wedding-itin','seed/floweready','seed/floweft','seed/wedding-portal'],
+ 'List every input you currently ask vendors by hand. That''s the form.',
+ 'Should eventually talk to the itinerary maker. Shares Supabase project with Floweready.',
+ 6),
+
+('seed/floweready',
+ 'Floweready: Training Portal',
+ 'Education platform for salon professionals',
+ 'hair', 'building',
+ array['Supabase'],
+ jsonb_build_object(
+   'repo','https://github.com/flowecollective/floweready',
+   'admin','https://supabase.com/dashboard/project/azddbdhnriqagvoyooqs'),
+ array['seed/flowed','seed/jordan-edu','seed/floweft'],
+ 'Map out the course structure: modules, lessons, paywall gate.',
+ 'Shares Supabase project with Flowed. Likely feeds content from Jordan Wang Education coaching.',
+ 7),
+
+('seed/floweft',
+ 'Floweft: Hair Line E-commerce',
+ 'Storefront for the Floweft hair product line',
+ 'hair', 'building',
+ array[]::text[],
+ jsonb_build_object('repo','https://github.com/flowecollective/floweft'),
+ array['seed/flowed','seed/floweready','seed/jordan-edu'],
+ 'Pick a commerce engine: Shopify headless, Stripe direct, or Medusa.',
+ 'Part of the Flowe Collective family of tools.',
+ 8),
+
+('seed/jordan-edu',
+ 'Jordan Wang: Education & Coaching',
+ 'Personal brand site for salon coaching & education',
+ 'hair', 'building',
+ array[]::text[],
+ jsonb_build_object('repo','https://github.com/flowecollective/Jordanwangco-'),
+ array['seed/floweready','seed/floweft','seed/flowe-site'],
+ 'Decide: is this a marketing site, or does it host the coaching itself?',
+ 'Umbrella personal brand. Ties into Floweready training and the broader Flowe Collective.',
+ 9),
+
+('seed/flowe-site',
+ 'Flowe Collective: Website Redesign',
+ 'Brand site refresh for the collective',
+ 'hair', 'idea',
+ array[]::text[],
+ '{}'::jsonb,
+ array['seed/flowed','seed/floweready','seed/floweft','seed/jordan-edu'],
+ 'Decide the role: storefront, services hub, or brand umbrella over Flowed + Floweready + Floweft?',
+ 'Parallels the Marco Wang Photography redesign on the photo side. Needs to tell the story of the three sub-brands without burying any of them.',
+ 10),
+
+('seed/timewellspent',
+ 'TimeWellSpent',
+ 'Mobile app, live on the App Store',
+ 'misc', 'live',
+ array['Vercel','Railway'],
+ jsonb_build_object(
+   'repo','https://github.com/marcowang-ai/timewellspentapp, https://github.com/marcowang-ai/timewellspent-backend',
+   'host','https://vercel.com/mwp-projects, https://railway.com/project/924fd199-47c1-46c6-aee6-82df3e2375ec'),
+ array[]::text[],
+ 'Decide what''s next: v2 features, growth push, or let it run?',
+ 'Already shipped & live on the App Store.
+
+Split architecture: mobile app (timewellspentapp) + separate backend API (timewellspent-backend). Marketing/web on Vercel under MWP Projects. Backend server deployed on Railway.',
+ 11)
+
+on conflict (id) do update set
+  title       = excluded.title,
+  tagline     = excluded.tagline,
+  category    = excluded.category,
+  status      = excluded.status,
+  stack       = excluded.stack,
+  links       = excluded.links,
+  related     = excluded.related,
+  next_action = excluded.next_action,
+  notes       = excluded.notes,
+  sort_order  = excluded.sort_order;

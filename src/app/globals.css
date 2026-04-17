@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --cat-photo:    #2E5568;
+    --cat-hair:     #A8574E;
+    --cat-weddings: #8E5378;
+    --cat-misc:     #7F7869;
+  }
+
+  html, body {
+    background: #F1EAD9;
+    color: #1C1812;
+  }
+
+  body {
+    font-family: var(--font-instrument-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* paper grain */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(rgba(28,24,18,.035) 1px, transparent 1px),
+      radial-gradient(rgba(28,24,18,.025) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+    mix-blend-mode: multiply;
+    opacity: .9;
+  }
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(1200px 700px at 85% -10%, rgba(176,69,31,.10), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(62,91,68,.10), transparent 60%);
+  }
+
+  .wrap { position: relative; z-index: 1; }
+}
+
+@layer components {
+  /* Category card washes */
+  .card-photo {
+    background: linear-gradient(rgba(46,85,104,.09), rgba(46,85,104,.09)), #E7DEC8;
+    border-color: rgba(46,85,104,.22);
+  }
+  .card-hair {
+    background: linear-gradient(rgba(168,87,78,.09), rgba(168,87,78,.09)), #E7DEC8;
+    border-color: rgba(168,87,78,.22);
+  }
+  .card-weddings {
+    background: linear-gradient(rgba(142,83,120,.10), rgba(142,83,120,.10)), #E7DEC8;
+    border-color: rgba(142,83,120,.22);
+  }
+  .card-misc {
+    background: linear-gradient(rgba(127,120,105,.10), rgba(127,120,105,.10)), #E7DEC8;
+    border-color: rgba(127,120,105,.22);
+  }
+
+  /* Crop-mark corners */
+  .crop-corners {
+    position: relative;
+  }
+  .crop-corners::before,
+  .crop-corners::after {
+    content: "";
+    position: absolute;
+    width: 10px; height: 10px;
+    opacity: .35;
+  }
+  .crop-corners::before {
+    top: 10px; left: 10px;
+    border-left: 1px solid #8A8172;
+    border-top:  1px solid #8A8172;
+  }
+  .crop-corners::after {
+    bottom: 10px; right: 10px;
+    border-right:  1px solid #8A8172;
+    border-bottom: 1px solid #8A8172;
+  }
+}
