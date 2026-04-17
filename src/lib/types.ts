@@ -21,6 +21,7 @@ export type Project = {
   related: string[];
   next_action: string;
   notes: string;
+  local_path: string;
   sort_order: number;
   updated_at: string;
 };

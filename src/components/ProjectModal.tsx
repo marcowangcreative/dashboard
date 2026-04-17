@@ -21,6 +21,7 @@ export default function ProjectModal({
   const [stack,    setStack]    = useState((project?.stack || []).join(", "));
   const [nextAct,  setNextAct]  = useState(project?.next_action || "");
   const [notes,    setNotes]    = useState(project?.notes || "");
+  const [localPath, setLocalPath] = useState(project?.local_path || "");
   const [related,  setRelated]  = useState<string[]>(project?.related || []);
   const [linkVals, setLinkVals] = useState<Record<LinkKey, string>>(() => {
     const init: Record<string, string> = {};
@@ -57,6 +58,7 @@ export default function ProjectModal({
       related,
       next_action: nextAct.trim(),
       notes: notes.trim(),
+      local_path: localPath.trim(),
       sort_order: project?.sort_order ?? 999,
       updated_at: new Date().toISOString(),
     };
@@ -117,6 +119,11 @@ export default function ProjectModal({
           <Field label="Notes & ideas" hint="URLs auto-link">
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
               className="w-full font-sans text-sm px-3 py-2.5 bg-paper-deep border border-paper-edge rounded-sm focus:outline-none focus:border-accent min-h-[80px]" />
+          </Field>
+
+          <Field label="Local path" hint="for Claude Code launch, e.g. ~/Projects/photobox">
+            <input value={localPath} onChange={e => setLocalPath(e.target.value)} placeholder="~/Projects/my-project"
+              className="w-full font-mono text-sm px-3 py-2.5 bg-paper-deep border border-paper-edge rounded-sm focus:outline-none focus:border-accent" />
           </Field>
 
           <Field label="Related projects" hint="how this connects to your other work">

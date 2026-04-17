@@ -118,3 +118,54 @@ export function buildClaudeContext(projects: Project[]): string {
   lines.push("");
   return lines.join("\n");
 }
+
+export function buildSingleProjectContext(project: Project, allProjects: Project[]): string {
+  const byId = new Map(allProjects.map(p => [p.id, p]));
+  const lines: string[] = [];
+
+  lines.push(`# Focus: ${project.title}`);
+  if (project.tagline) lines.push(`*${project.tagline}*`);
+  lines.push("");
+  lines.push(`- **Status:** ${STATUS_LABEL[project.status] || project.status}`);
+  lines.push(`- **Category:** ${project.category}`);
+  if (project.stack?.length) lines.push(`- **Stack:** ${project.stack.join(", ")}`);
+  if (project.next_action) lines.push(`- **Next action:** ${project.next_action}`);
+
+  const linkLines: string[] = [];
+  LINK_TYPES.forEach(t => {
+    const urls = splitUrls(project.links?.[t.key]);
+    urls.forEach(url => {
+      const lbl = urls.length > 1 ? deriveLinkLabel(url, t.label) : t.label;
+      linkLines.push(`  - ${lbl}: ${url}`);
+    });
+  });
+  if (linkLines.length) {
+    lines.push(`- **Links:**`);
+    linkLines.forEach(l => lines.push(l));
+  }
+
+  if (project.notes) {
+    lines.push(`- **Notes:**`);
+    project.notes.split("\n").forEach(line => lines.push(`  > ${line}`));
+  }
+  lines.push("");
+
+  // Related projects with brief context
+  const relatedProjects = (project.related || [])
+    .map(rid => byId.get(rid))
+    .filter((p): p is Project => !!p);
+  if (relatedProjects.length) {
+    lines.push("## Related projects (brief)");
+    lines.push("");
+    relatedProjects.forEach(rp => {
+      lines.push(`- **${rp.title}** (${STATUS_LABEL[rp.status]}) — ${rp.tagline || "no description"}`);
+      if (rp.links?.repo) lines.push(`  Repo: ${rp.links.repo}`);
+    });
+    lines.push("");
+  }
+
+  lines.push("---");
+  lines.push("_Help me work on this project. Read the repo to understand the current codebase, then tackle the next action. Flag any overlap or reuse opportunities with the related projects listed above._");
+  lines.push("");
+  return lines.join("\n");
+}

@@ -16,6 +16,7 @@ create table if not exists public.projects (
   related     text[] default '{}',
   next_action text   default '',
   notes       text   default '',
+  local_path  text   default '',
   sort_order  integer default 0,
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()

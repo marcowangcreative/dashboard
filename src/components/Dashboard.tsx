@@ -7,6 +7,7 @@ import {
 } from "@/lib/constants";
 import { splitUrls, deriveLinkLabel, timeAgo, linkifyNotes } from "@/lib/utils";
 import { upsertProject, deleteProject, syncRelationships } from "@/lib/actions";
+import { buildSingleProjectContext } from "@/lib/claudeContext";
 import ProjectModal from "./ProjectModal";
 import GraphView from "./GraphView";
 import ContextBar from "./ContextBar";
@@ -144,6 +145,7 @@ export default function Dashboard({ initialProjects }: { initialProjects: Projec
             <ProjectCard
               key={p.id}
               project={p}
+              allProjects={projects}
               index={i + 1}
               onEdit={() => openEdit(p)}
               onCycle={() => handleCycleStatus(p)}
@@ -224,14 +226,16 @@ function ViewChip({ active, onClick, children }: { active: boolean; onClick: () 
 /* ---------- Card ---------- */
 
 function ProjectCard({
-  project: p, index, onEdit, onCycle, onDelete,
+  project: p, allProjects, index, onEdit, onCycle, onDelete,
 }: {
   project: Project;
+  allProjects: Project[];
   index: number;
   onEdit: () => void;
   onCycle: () => void;
   onDelete: () => void;
 }) {
+  const [launchLabel, setLaunchLabel] = useState<string | null>(null);
   const idx = String(index).padStart(2, "0");
   const catClass = `card-${p.category}`;
   const statusBorder =
@@ -284,6 +288,7 @@ function ProjectCard({
       <div className="mt-auto pt-3 border-t border-dashed border-paper-edge flex justify-between items-center gap-2.5">
         <span className="font-mono text-[10px] text-ink-faint tracking-[0.06em]">Updated {timeAgo(p.updated_at)}</span>
         <div className="flex gap-0.5">
+          <LaunchBtn project={p} allProjects={allProjects} launchLabel={launchLabel} setLaunchLabel={setLaunchLabel} />
           <IconBtn onClick={onEdit}>Edit</IconBtn>
           <IconBtn onClick={onCycle} title="Cycle status">↻</IconBtn>
           <IconBtn onClick={onDelete} danger>Del</IconBtn>
@@ -301,6 +306,71 @@ function IconBtn({ onClick, children, danger, title }: { onClick: () => void; ch
       className={`px-2 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] rounded-sm transition-all text-ink-faint hover:bg-paper ${danger ? "hover:text-accent" : "hover:text-ink"}`}
     >
       {children}
+    </button>
+  );
+}
+
+function LaunchBtn({
+  project, allProjects, launchLabel, setLaunchLabel,
+}: {
+  project: Project;
+  allProjects: Project[];
+  launchLabel: string | null;
+  setLaunchLabel: (l: string | null) => void;
+}) {
+  const prompt = buildSingleProjectContext(project, allProjects);
+  const hasLocal = !!project.local_path;
+  const repoUrl = splitUrls(project.links?.repo)?.[0];
+  const canLaunch = hasLocal || !!repoUrl;
+  const isDev = typeof window !== "undefined" && window.location.hostname === "localhost";
+
+  async function handleClick() {
+    if (isDev && canLaunch) {
+      setLaunchLabel("Launching…");
+      try {
+        const res = await fetch("/api/claude", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt,
+            localPath: project.local_path || undefined,
+            repoUrl: !project.local_path ? repoUrl : undefined,
+          }),
+        });
+        if (res.ok) {
+          setLaunchLabel("✓ Launched");
+        } else {
+          const data = await res.json();
+          setLaunchLabel(data.error || "Error");
+        }
+      } catch {
+        setLaunchLabel("Error");
+      }
+      setTimeout(() => setLaunchLabel(null), 2000);
+    } else {
+      // Fallback: copy prompt to clipboard
+      try {
+        await navigator.clipboard.writeText(prompt);
+        setLaunchLabel("✓ Copied");
+      } catch {
+        setLaunchLabel("Error");
+      }
+      setTimeout(() => setLaunchLabel(null), 1400);
+    }
+  }
+
+  const label = launchLabel || (isDev && canLaunch ? "▶ Claude" : "⎋ Copy");
+  const title = isDev && canLaunch
+    ? `Launch Claude Code in ${project.local_path || "cloned repo"}`
+    : "Copy project context to clipboard";
+
+  return (
+    <button
+      onClick={handleClick}
+      title={title}
+      className="px-2 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] rounded-sm transition-all text-ink-faint hover:bg-paper hover:text-accent"
+    >
+      {label}
     </button>
   );
 }
