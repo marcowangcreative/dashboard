@@ -46,8 +46,8 @@ export async function POST(req: Request) {
   }
 
   // Launch interactive claude session with the prompt file contents as initial message
-  // Use: cat promptfile | claude  (pipes prompt as first message into interactive mode)
-  const shellScript = `${cdCommand} && cat "${promptFile}" | /opt/homebrew/bin/claude`;
+  // --dangerously-skip-permissions: no approval prompts, just executes
+  const shellScript = `${cdCommand} && cat "${promptFile}" | /opt/homebrew/bin/claude --dangerously-skip-permissions`;
 
   // Use osascript to open a new Terminal.app window
   const osa = `tell application "Terminal"
